@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C盘清理精灵1.4 - 官方网站</title>
+    <meta name="description" content="C盘清理精灵1.4 - 一键释放C盘空间，让电脑快如新生，安全无捆绑，完全免费">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#2D81FF',
+                        secondary: '#36CFC9',
+                        success: '#52C41A',
+                        warning: '#FAAD14',
+                        dark: '#1D2129',
+                        light: '#F2F3F5',
+                        gray: {
+                            100: '#F7F8FA',
+                            200: '#E5E6EB',
+                            300: '#C9CDD4',
+                            400: '#86909C',
+                            500: '#4E5969',
+                            600: '#272E3B',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    boxShadow: {
+                        'card': '0 4px 20px rgba(0, 0, 0, 0.08)',
+                        'hover': '0 8px 30px rgba(0, 0, 0, 0.12)',
+                        'button': '0 4px 12px rgba(45, 129, 255, 0.3)',
+                    }
+                },
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .text-shadow {
+                text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            }
+            .transition-base {
+                transition: all 300ms ease-in-out;
+            }
+            .pulse-animation {
+                animation: pulse 2s infinite;
+            }
+            @keyframes pulse {
+                0% { transform: scale(1); }
+                50% { transform: scale(1.05); }
+                100% { transform: scale(1); }
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans text-gray-600">
+    <!-- 导航栏 -->
+    <header class="sticky top-0 bg-white/90 backdrop-blur-sm shadow-sm z-50 transition-base">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center space-x-2">
+                    <i class="fa fa-windows text-primary text-2xl"></i>
+                    <span class="text-xl font-bold text-dark">C盘清理精灵1.4</span>
+                </div>
+                
+                <!-- 桌面导航 -->
+                <nav class="hidden md:flex items-center space-x-8">
+                    <a href="#home" class="text-gray-500 hover:text-primary transition-base">首页</a>
+                    <a href="#intro" class="text-gray-500 hover:text-primary transition-base">软件介绍</a>
+                    <a href="#download" class="text-gray-500 hover:text-primary transition-base">下载中心</a>
+                    <a href="#contact" class="text-gray-500 hover:text-primary transition-base">联系我们</a>
+                    <a href="#privacy" class="text-gray-500 hover:text-primary transition-base text-sm">隐私政策</a>
+                    <a href="#download" class="bg-primary hover:bg-primary/90 text-white px-5 py-2 rounded-lg shadow-button transition-base font-medium">
+                        <i class="fa fa-download mr-1"></i>立即下载
+                    </a>
+                </nav>
+                
+                <!-- 移动端菜单按钮 -->
+                <button id="menuBtn" class="md:hidden text-gray-500 hover:text-primary">
+                    <i class="fa fa-bars text-xl"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- 移动端导航菜单 -->
+        <div id="mobileMenu" class="md:hidden hidden bg-white border-t border-gray-200">
+            <div class="container mx-auto px-4 py-3 space-y-3">
+                <a href="#home" class="block py-2 text-gray-500 hover:text-primary mobile-link">首页</a>
+                <a href="#intro" class="block py-2 text-gray-500 hover:text-primary mobile-link">软件介绍</a>
+                <a href="#download" class="block py-2 text-gray-500 hover:text-primary mobile-link">下载中心</a>
+                <a href="#contact" class="block py-2 text-gray-500 hover:text-primary mobile-link">联系我们</a>
+                <a href="#privacy" class="block py-2 text-gray-500 hover:text-primary text-sm mobile-link">隐私政策</a>
+                <a href="#download" class="block bg-primary text-white text-center px-5 py-2 rounded-lg mt-2">
+                    <i class="fa fa-download mr-1"></i>立即下载
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <!-- 首页Banner -->
+        <section id="home" class="bg-gradient-to-br from-primary/90 to-primary py-16 md:py-24 overflow-hidden">
+            <!-- 背景动态图标 -->
+            <div class="absolute inset-0 overflow-hidden opacity-10">
+                <i class="fa fa-trash-o absolute text-white text-6xl top-1/4 left-1/5 animate-spin"></i>
+                <i class="fa fa-file-text-o absolute text-white text-5xl top-1/2 left-2/3 animate-pulse"></i>
+                <i class="fa fa-database absolute text-white text-7xl bottom-1/4 left-1/3 animate-bounce"></i>
+            </div>
+            
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8 relative">
+                <div class="flex flex-col md:flex-row items-center">
+                    <div class="md:w-1/2 text-center md:text-left mb-10 md:mb-0">
+                        <h1 class="text-[clamp(2rem,5vw,3.5rem)] font-bold text-white leading-tight text-shadow mb-4">
+                            一键释放C盘空间<br>让电脑快如新生
+                        </h1>
+                        <p class="text-white/90 text-lg md:text-xl mb-8 max-w-lg mx-auto md:mx-0">
+                            安全无捆绑，免费轻量，专注清理Windows系统冗余文件
+                        </p>
+                        <div class="flex flex-col sm:flex-row justify-center md:justify-start gap-4">
+                            <a href="#download" class="bg-white text-primary font-semibold px-8 py-3 rounded-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-base text-center pulse-animation">
+                                <i class="fa fa-download mr-2"></i>立即下载
+                            </a>
+                            <a href="#intro" class="bg-transparent border-2 border-white text-white font-semibold px-8 py-3 rounded-lg hover:bg-white/10 transition-base text-center">
+                                <i class="fa fa-info-circle mr-2"></i>了解更多
+                            </a>
+                        </div>
+                        <p class="text-white/80 mt-6 text-sm">
+                            支持 Windows 10/11（32/64位）| 无广告 · 无捆绑 · 完全免费
+                        </p>
+                        
+                        <!-- 安全认证标识 -->
+                        <div class="flex flex-wrap justify-center md:justify-start gap-4 mt-8">
+                            <div class="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-white text-sm flex items-center">
+                                <i class="fa fa-shield mr-1"></i> 360安全认证
+                            </div>
+                            <div class="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-white text-sm flex items-center">
+                                <i class="fa fa-check-circle mr-1"></i> 火绒安全检测
+                            </div>
+                            <div class="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-white text-sm flex items-center">
+                                <i class="fa fa-lock mr-1"></i> 无恶意代码
+                            </div>
+                        </div>
+                    </div>
+                    <div class="md:w-1/2">
+                        <div class="bg-white rounded-xl shadow-2xl overflow-hidden transform md:rotate-1 hover:rotate-0 transition-base">
+                            <!-- 替换为软件真实界面截图 -->
+                            <img src="https://picsum.photos/seed/cleannerapp/600/400" alt="C盘清理精灵1.4 主界面截图" class="w-full h-auto object-cover" loading="lazy">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 版本更新 -->
+        <section class="py-16 bg-white">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+                <h2 class="text-3xl font-bold text-center mb-12 text-dark">
+                    <span class="border-b-4 border-primary pb-2">1.4 版本核心更新</span>
+                </h2>
+                
+                <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+                    <div class="bg-gray-100 p-6 rounded-xl shadow-card hover:shadow-hover transition-base group">
+                        <div class="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-base">
+                            <span class="text-primary font-bold">1</span>
+                        </div>
+                        <h3 class="text-lg font-semibold mb-2 text-dark">
+                            <span class="text-warning">新增</span> 系统日志深度清理
+                        </h3>
+                        <p class="text-gray-500">清理冗余系统日志，释放更多隐藏空间</p>
+                    </div>
+                    
+                    <div class="bg-gray-100 p-6 rounded-xl shadow-card hover:shadow-hover transition-base group">
+                        <div class="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-base">
+                            <span class="text-primary font-bold">2</span>
+                        </div>
+                        <h3 class="text-lg font-semibold mb-2 text-dark">
+                            <span class="text-success">优化</span> 扫描引擎
+                        </h3>
+                        <p class="text-gray-500">速度提升30%，支持识别Win11最新格式临时文件</p>
+                    </div>
+                    
+                    <div class="bg-gray-100 p-6 rounded-xl shadow-card hover:shadow-hover transition-base group">
+                        <div class="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-base">
+                            <span class="text-primary font-bold">3</span>
+                        </div>
+                        <h3 class="text-lg font-semibold mb-2 text-dark">
+                            <span class="text-warning">新增</span> 清理后备份选项
+                        </h3>
+                        <p class="text-gray-500">误删文件可在"恢复区"一键找回</p>
+                    </div>
+                    
+                    <div class="bg-gray-100 p-6 rounded-xl shadow-card hover:shadow-hover transition-base group">
+                        <div class="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-base">
+                            <span class="text-primary font-bold">4</span>
+                        </div>
+                        <h3 class="text-lg font-semibold mb-2 text-dark">
+                            <span class="text-success">优化</span> 兼容性
+                        </h3>
+                        <p class="text-gray-500">专注适配Win10/11系统，运行更稳定</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 软件介绍 -->
+        <section id="intro" class="py-16 bg-gray-50">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+                <h2 class="text-3xl font-bold text-center mb-12 text-dark">
+                    <span class="border-b-4 border-primary pb-2">软件介绍</span>
+                </h2>
+                
+                <div class="max-w-3xl mx-auto">
+                    <p class="text-lg text-gray-600 mb-8 leading-relaxed">
+                        <strong class="text-dark">C盘清理精灵</strong>是一款专注于Windows系统C盘空间释放的轻量级工具，从1.0版本至今，已服务超100万用户。
+                    </p>
+                    
+                    <p class="text-lg text-gray-600 mb-10 leading-relaxed">
+                        V1.4版本聚焦"安全""高效""易用"三大核心，无需专业知识，3步即可完成C盘深度清理，解决"C盘爆红""电脑卡顿""存储空间不足"等问题。
+                    </p>
+                    
+                    <!-- 功能速览标签 -->
+                    <div class="flex flex-wrap gap-3 mb-12 justify-center">
+                        <span class="bg-primary/10 text-primary px-4 py-2 rounded-full text-sm flex items-center">
+                            <i class="fa fa-trash-o mr-1"></i>系统垃圾清理
+                        </span>
+                        <span class="bg-primary/10 text-primary px-4 py-2 rounded-full text-sm flex items-center">
+                            <i class="fa fa-file-o mr-1"></i>大文件查找
+                        </span>
+                        <span class="bg-primary/10 text-primary px-4 py-2 rounded-full text-sm flex items-center">
+                            <i class="fa fa-undo mr-1"></i>误删恢复
+                        </span>
+                        <span class="bg-primary/10 text-primary px-4 py-2 rounded-full text-sm flex items-center">
+                            <i class="fa fa-ban mr-1"></i>无广告无捆绑
+                        </span>
+                        <span class="bg-primary/10 text-primary px-4 py-2 rounded-full text-sm flex items-center">
+                            <i class="fa fa-bolt mr-1"></i>快速扫描
+                        </span>
+                    </div>
+                    
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div class="flex items-start group">
+                            <div class="flex-shrink-0 w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center mr-4 group-hover:bg-primary/20 transition-base">
+                                <i class="fa fa-feather text-primary"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-dark text-lg mb-2">轻量便捷</h3>
+                                <p class="text-gray-500">安装包体积小巧，不占用系统资源，后台运行无感知</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-start group">
+                            <div class="flex-shrink-0 w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center mr-4 group-hover:bg-primary/20 transition-base">
+                                <i class="fa fa-shield text-primary"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-dark text-lg mb-2">安全防护</h3>
+                                <p class="text-gray-500">清理前自动检测系统关键文件，杜绝误删；经主流安全软件认证</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-start group">
+                            <div class="flex-shrink-0 w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center mr-4 group-hover:bg-primary/20 transition-base">
+                                <i class="fa fa-gift text-primary"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-dark text-lg mb-2">完全免费</h3>
+                                <p class="text-gray-500">无付费功能、无会员门槛，所有功能终身免费</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-start group">
+                            <div class="flex-shrink-0 w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center mr-4 group-hover:bg-primary/20 transition-base">
+                                <i class="fa fa-check-square-o text-primary"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-dark text-lg mb-2">精准适配</h3>
+                                <p class="text-gray-500">专为Win10/11开发，实时支持新系统文件格式</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 下载引导 -->
+                    <div class="mt-12 text-center">
+                        <a href="#download" class="inline-block bg-primary hover:bg-primary/90 text-white font-semibold px-8 py-3 rounded-lg shadow-button transition-base">
+                            <i class="fa fa-download mr-2"></i>立即下载 C盘清理精灵1.4
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 用户见证 -->
+        <section class="py-16 bg-white">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+                <h2 class="text-3xl font-bold text-center mb-12 text-dark">
+                    <span class="border-b-4 border-primary pb-2">用户真实评价</span>
+                </h2>
+                
+                <div class="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+                    <div class="bg-gray-50 p-6 rounded-xl shadow-card hover:shadow-hover transition-base">
+                        <div class="flex items-center mb-4">
+                            <img src="https://picsum.photos/seed/user1/100/100" alt="用户头像" class="w-12 h-12 rounded-full object-cover mr-4">
+                            <div>
+                                <h4 class="font-semibold text-dark">张先生</h4>
+                                <div class="text-yellow-400 text-sm">
+                                    <i class="fa fa-star"></i>
+                                    <i class="fa fa-star"></i>
+                                    <i class="fa fa-star"></i>
+                                    <i class="fa fa-star"></i>
+                                    <i class="fa fa-star"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="text-gray-600">"清理后释放了18GB空间，电脑启动速度明显变快，扫描速度也很快，关键是没有广告，非常良心！"</p>
+                    </div>
+                    
+                    <div class="bg-gray-50 p-6 rounded-xl shadow-card hover:shadow-hover transition-base">
+                        <div class="flex items-center mb-4">
+                            <img src="https://picsum.photos/seed/user2/100/100" alt="用户头像" class="w-12 h-12 rounded-full object-cover mr-4">
+                            <div>
+                                <h4 class="font-semibold text-dark">李女士</h4>
+                                <div class="text-yellow-400 text-sm">
+                                    <i class="fa fa-star"></i>
+                                    <i class="fa fa-star"></i>
+                                    <i class="fa fa-star"></i>
+                                    <i class="fa fa-star"></i>
+                                    <i class="fa fa-star-half-o"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="text-gray-600">"误删了一个文档，还好有恢复功能找回来了，这个设计太贴心了！操作简单，适合我这种电脑小白。"</p>
+                    </div>
+                    
+                    <div class="bg-gray-50 p-6 rounded-xl shadow-card hover:shadow-hover transition-base">
+                        <div class="flex items-center mb-4">
+                            <img src="https://picsum.photos/seed/user3/100/100" alt="用户头像" class="w-12 h-12 rounded-full object-cover mr-4">
+                            <div>
+                                <h4 class="font-semibold text-dark">王先生</h4>
+                                <div class="text-yellow-400 text-sm">
+                                    <i class="fa fa-star"></i>
+                                    <i class="fa fa-star"></i>
+                                    <i class="fa fa-star"></i>
+                                    <i class="fa fa-star"></i>
+                                    <i class="fa fa-star"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="text-gray-600">"对比了好几款清理软件，这款最轻便，Win11系统完美适配，清理的垃圾文件也比同类软件多，推荐！"</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 下载中心 -->
+        <section id="download" class="py-16 bg-gray-50">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+                <h2 class="text-3xl font-bold text-center mb-12 text-dark">
+                    <span class="border-b-4 border-primary pb-2">下载中心</span>
+                </h2>
+                
+                <div class="max-w-3xl mx-auto bg-white rounded-2xl p-8 shadow-card">
+                    <p class="text-center text-gray-500 mb-8">
+                        <i class="fa fa-exclamation-circle text-primary mr-2"></i>
+                        官方下载通道（唯一安全来源）
+                    </p>
+                    
+                    <!-- 安全提示 -->
+                    <div class="bg-primary/5 border border-primary/20 rounded-lg p-4 mb-8 text-center">
+                        <p class="text-primary text-sm">
+                            <i class="fa fa-shield mr-1"></i> 官方认证 | 无病毒 | 无捆绑 | 安全下载
+                        </p>
+                    </div>
+                    
+                    <div class="space-y-6">
+                        <div class="bg-gray-50 rounded-xl p-6 shadow-sm hover:shadow-md transition-base flex flex-col md:flex-row items-center justify-between">
+                            <div>
+                                <h3 class="font-semibold text-dark text-lg">官方安装版</h3>
+                                <p class="text-gray-500">适用系统：Win10/11（32/64位）</p>
+                            </div>
+                            <a href="#" class="mt-4 md:mt-0 bg-primary hover:bg-primary/90 text-white font-semibold px-6 py-3 rounded-lg transition-base flex items-center shadow-button">
+                                <i class="fa fa-download mr-2"></i>立即下载
+                            </a>
+                        </div>
+                        
+                        <div class="bg-gray-50 rounded-xl p-6 shadow-sm hover:shadow-md transition-base flex flex-col md:flex-row items-center justify-between">
+                            <div>
+                                <h3 class="font-semibold text-dark text-lg">绿色免安装版</h3>
+                                <p class="text-gray-500">适用系统：Win10/11（64位）</p>
+                            </div>
+                            <a href="#" class="mt-4 md:mt-0 bg-secondary hover:bg-secondary/90 text-white font-semibold px-6 py-3 rounded-lg transition-base flex items-center">
+                                <i class="fa fa-download mr-2"></i>立即下载
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-10 bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded">
+                        <h4 class="font-semibold text-yellow-800 mb-2">下载须知</h4>
+                        <ul class="list-disc list-inside text-yellow-700 space-y-2 text-sm">
+                            <li>请务必从官网下载，避免第三方平台篡改安装包（可能捆绑恶意软件）</li>
+                            <li>安装时若提示"未知发布者"，请选择"更多信息→仍要运行"（非病毒提示，安全可靠）</li>
+                            <li>绿色版解压后直接运行"C盘清理精灵.exe"，无需安装，适合办公场景</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 免责声明 -->
+        <section class="py-16 bg-white">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+                <h2 class="text-3xl font-bold text-center mb-12 text-dark">
+                    <span class="border-b-4 border-primary pb-2">免责声明</span>
+                </h2>
+                
+                <div class="max-w-3xl mx-auto bg-gray-50 p-8 rounded-xl shadow-card">
+                    <ul class="space-y-4 text-gray-600">
+                        <li class="flex items-start">
+                            <i class="fa fa-circle text-xs text-primary mt-1.5 mr-3"></i>
+                            <span>本软件仅用于个人非商业用途，请勿用于企业或商业环境，如需商业授权，请联系客服</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fa fa-circle text-xs text-primary mt-1.5 mr-3"></i>
+                            <span>软件运行过程中，用户应自行确认清理文件的安全性，对于误删非系统文件导致的损失，开发者不承担责任</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fa fa-circle text-xs text-primary mt-1.5 mr-3"></i>
+                            <span>请确保操作系统为Win10/11，非支持系统下运行可能出现功能异常，开发者不提供技术支持</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- 隐私政策 -->
+        <section id="privacy" class="py-16 bg-gray-50">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+                <h2 class="text-3xl font-bold text-center mb-12 text-dark">
+                    <span class="border-b-4 border-primary pb-2">隐私政策</span>
+                </h2>
+                
+                <div class="max-w-3xl mx-auto bg-white p-8 rounded-xl shadow-card">
+                    <div class="space-y-4 text-gray-600">
+                        <p>感谢您使用C盘清理精灵，我们尊重并保护所有使用服务用户的个人隐私权。为了给您提供更准确、更有个性化的服务，我们将按照本隐私权政策收集、使用、披露您的信息。但我们承诺，将以合理的方式收集信息，并仅为实现本政策所述的目的而使用。</p>
+                        
+                        <h3 class="font-semibold text-dark text-lg mt-6 mb-3">数据收集说明</h3>
+                        <p>本软件仅在本地运行，不会收集、上传任何用户个人数据（包括但不限于文档、图片、视频等个人文件）。所有扫描和清理操作均在您的设备本地完成。</p>
+                        
+                        <h3 class="font-semibold text-dark text-lg mt-6 mb-3">数据使用说明</h3>
+                        <p>软件运行过程中产生的临时数据（如扫描结果、清理记录）仅存储在本地设备中，您可以随时通过软件功能清除这些数据，我们不会以任何形式访问或使用这些数据。</p>
+                        
+                        <h3 class="font-semibold text-dark text-lg mt-6 mb-3">第三方服务</h3>
+                        <p>本软件不包含任何第三方插件或服务，不会将您的任何信息提供给第三方。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 联系我们 -->
+        <section id="contact" class="py-16 bg-white">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+                <h2 class="text-3xl font-bold text-center mb-12 text-dark">
+                    <span class="border-b-4 border-primary pb-2">联系我们</span>
+                </h2>
+                
+                <div class="max-w-2xl mx-auto grid md:grid-cols-3 gap-8">
+                    <div class="bg-gray-50 p-6 rounded-xl text-center shadow-card hover:shadow-hover transition-base">
+                        <div class="w-14 h-14 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-primary/20 transition-base">
+                            <i class="fa fa-bilibili text-primary text-2xl"></i>
+                        </div>
+                        <h3 class="font-semibold text-dark mb-2">哔哩哔哩</h3>
+                        <p class="text-gray-600">陆龟123</p>
+                    </div>
+                    
+                    <div class="bg-gray-50 p-6 rounded-xl text-center shadow-card hover:shadow-hover transition-base">
+                        <div class="w-14 h-14 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-primary/20 transition-base">
+                            <i class="fa fa-weixin text-primary text-2xl"></i>
+                        </div>
+                        <h3 class="font-semibold text-dark mb-2">微信</h3>
+                        <p class="text-gray-600 mb-3">陆龟先生</p>
+                        <div class="text-xs text-gray-400">
+                            <p>长按保存二维码</p>
+                            <img src="https://picsum.photos/seed/wechat/100/100" alt="微信二维码" class="w-24 h-24 mx-auto mt-2 rounded-lg border border-gray-200" loading="lazy">
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gray-50 p-6 rounded-xl text-center shadow-card hover:shadow-hover transition-base">
+                        <div class="w-14 h-14 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-primary/20 transition-base">
+                            <i class="fa fa-envelope text-primary text-2xl"></i>
+                        </div>
+                        <h3 class="font-semibold text-dark mb-2">邮箱</h3>
+                        <p class="text-gray-600 mb-3" id="email">Luguixiansheng@outlook.com</p>
+                        <button onclick="copyEmail()" class="text-primary text-sm hover:underline">
+                            <i class="fa fa-copy mr-1"></i>点击复制
+                        </button>
+                        <p id="copyTip" class="text-success text-xs mt-1 hidden">复制成功！</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 返回顶部按钮 -->
+    <button id="backToTop" class="fixed bottom-8 right-8 bg-primary text-white w-12 h-12 rounded-full flex items-center justify-center shadow-lg opacity-0 invisible transition-base hover:bg-primary/90">
+        <i class="fa fa-arrow-up"></i>
+    </button>
+
+    <!-- 页脚 -->
+    <footer class="bg-dark text-white py-10">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center">
+                <div class="flex items-center justify-center space-x-2 mb-4">
+                    <i class="fa fa-windows text-primary"></i>
+                    <span class="font-bold">C盘清理精灵1.4</span>
+                </div>
+                <p class="text-gray-400 mb-6">© 202X C盘清理精灵 版权所有</p>
+                <p class="text-gray-500 text-sm">
+                    安全提示：警惕第三方平台篡改版，官网为唯一安全下载渠道
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // 移动端菜单自动关闭
+        document.querySelectorAll('.mobile-link').forEach(link => {
+            link.addEventListener('click', function() {
+                document.getElementById('mobileMenu').classList.add('hidden');
+            });
+        });
+
+        // 移动端菜单切换
+        document.getElementById('menuBtn').addEventListener('click', function() {
+            const mobileMenu = document.getElementById('mobileMenu');
+            mobileMenu.classList.toggle('hidden');
+        });
+
+        // 平滑滚动
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+
+        // 滚动时导航栏样式变化
+        window.addEventListener('scroll', function() {
+            const header = document.querySelector('header');
+            const backToTop = document.getElementById('backToTop');
+            
+            // 导航栏样式
+            if (window.scrollY > 50) {
+                header.classList.add('py-2', 'shadow');
+                header.classList.remove('py-4');
+            } else {
+                header.classList.add('py-4');
+                header.classList.remove('py-2', 'shadow');
+            }
+            
+            // 返回顶部按钮显示/隐藏
+            if (window.scrollY > 500) {
+                backToTop.classList.remove('opacity-0', 'invisible');
+                backToTop.classList.add('opacity-100', 'visible');
+            } else {
+                backToTop.classList.add('opacity-0', 'invisible');
+                backToTop.classList.remove('opacity-100', 'visible');
+            }
+        });
+
+        // 返回顶部功能
+        document.getElementById('backToTop').addEventListener('click', function() {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        });
+
+        // 复制邮箱功能
+        function copyEmail() {
+            const email = document.getElementById('email').textContent;
+            navigator.clipboard.writeText(email).then(() => {
+                const tip = document.getElementById('copyTip');
+                tip.classList.remove('hidden');
+                setTimeout(() => {
+                    tip.classList.add('hidden');
+                }, 2000);
+            });
+        }
+
+        // 图片懒加载
+        document.addEventListener("DOMContentLoaded", function() {
+            const lazyImages = document.querySelectorAll("img[loading='lazy']");
+            
+            if ('IntersectionObserver' in window) {
+                const imageObserver = new IntersectionObserver((entries, observer) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            const image = entry.target;
+                            image.src = image.src;
+                            imageObserver.unobserve(image);
+                        }
+                    });
+                });
+                
+                lazyImages.forEach(image => {
+                    imageObserver.observe(image);
+                });
+            }
+        });
+    </script>
+</body>
+</html>
