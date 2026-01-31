@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>飞行模拟游戏</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        #game-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        #cockpit-view {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('https://dummyimage.com/1920x1080/000000/ffffff') no-repeat center center fixed;
+            background-size: cover;
+            z-index: 30;
+        }
+
+        .instrument {
+            position: absolute;
+            width: 120px;
+            height: 120px;
+            background: radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.6) 100%);
+            border-radius: 50%;
+            color: white;
+            text-align: center;
+            line-height: 120px;
+            font-size: 20px;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .instrument:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+        }
+
+        #heading-instrument {
+            top: 20px;
+            left: 20px;
+        }
+
+        #throttle-instrument {
+            top: 20px;
+            left: 160px;
+        }
+
+        #fuel-instrument {
+            top: 20px;
+            left: 300px;
+        }
+
+        #altitude-instrument {
+            top: 20px;
+            right: 20px;
+        }
+
+        #speed-instrument {
+            top: 160px;
+            right: 20px;
+        }
+
+        #pitch-instrument {
+            top: 160px;
+            left: 20px;
+        }
+
+        #roll-instrument {
+            top: 160px;
+            left: 160px;
+        }
+
+        #crash-message {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 48px;
+            color: red;
+            z-index: 100;
+        }
+
+        #takeoff-message {
+            display: none;
+            position: absolute;
+            top: 20%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 24px;
+            color: green;
+            z-index: 100;
+        }
+
+        #error-message {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 24px;
+            color: red;
+            z-index: 100;
+        }
+
+        #cockpit-window {
+            position: absolute;
+            top: 10%;
+            left: 10%;
+            width: 80%;
+            height: 80%;
+            background-color: rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        #controls-tip {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        #takeoff-tip {
+            position: absolute;
+            top: 10%;
+            left: 20px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 16px;
+            display: none;
+        }
+
+        #landing-gear-tip {
+            display: none;
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 16px;
+            z-index: 100;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="game-container"></div>
+    <div id="cockpit-view">
+        <div id="cockpit-window"></div>
+        <div id="heading-instrument" class="instrument">0°</div>
+        <div id="throttle-instrument" class="instrument">50%</div>
+        <div id="fuel-instrument" class="instrument">∞</div>
+        <div id="altitude-instrument" class="instrument">0m</div>
+        <div id="speed-instrument" class="instrument">0km/h</div>
+        <div id="pitch-instrument" class="instrument">0°</div>
+        <div id="roll-instrument" class="instrument">0°</div>
+    </div>
+    <div id="crash-message">飞机坠毁！游戏结束！</div>
+    <div id="takeoff-message">起飞成功！</div>
+    <div id="error-message"></div>
+    <div id="controls-tip">
+        控制提示：<br>
+        方向键：控制飞机俯仰和转向<br>
+        G 键：切换起落架<br>
+        V 键：切换视角<br>
+        鼠标移动：控制油门
+    </div>
+    <div id="takeoff-tip">
+        起飞提示：提升油门并适当拉起机头，速度达到一定值即可起飞。
+    </div>
+    <div id="landing-gear-tip"></div>
+    <script>
+        let threejsLoaded = false;
+        let cannonjsLoaded = false;
+
+        const threeScript = document.createElement('script');
+        threeScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
+        threeScript.onload = () => {
+            threejsLoaded = true;
+            checkLibrariesLoaded();
+        };
+        threeScript.onerror = () => {
+            showErrorMessage('Three.js 加载失败，请检查网络连接。');
+        };
+        document.head.appendChild(threeScript);
+
+        const cannonScript = document.createElement('script');
+        cannonScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/cannon.js/0.6.2/cannon.min.js';
+        cannonScript.onload = () => {
+            cannonjsLoaded = true;
+            checkLibrariesLoaded();
+        };
+        cannonScript.onerror = () => {
+            showErrorMessage('Cannon.js 加载失败，请检查网络连接。');
+        };
+        document.head.appendChild(cannonScript);
+
+        function checkLibrariesLoaded() {
+            if (threejsLoaded && cannonjsLoaded) {
+                startGame();
+            }
+        }
+
+        function showErrorMessage(message) {
+            const errorMessage = document.getElementById('error-message');
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+        }
+
+        function startGame() {
+            try {
+                // 全局变量
+                const gameContainer = document.getElementById('game-container');
+                const cockpitView = document.getElementById('cockpit-view');
+                const cockpitWindow = document.getElementById('cockpit-window');
+                const headingInstrument = document.getElementById('heading-instrument');
+                const throttleInstrument = document.getElementById('throttle-instrument');
+                const fuelInstrument = document.getElementById('fuel-instrument');
+                const altitudeInstrument = document.getElementById('altitude-instrument');
+                const speedInstrument = document.getElementById('speed-instrument');
+                const pitchInstrument = document.getElementById('pitch-instrument');
+                const rollInstrument = document.getElementById('roll-instrument');
+                const crashMessage = document.getElementById('crash-message');
+                const takeoffMessage = document.getElementById('takeoff-message');
+                const takeoffTip = document.getElementById('takeoff-tip');
+                const landingGearTip = document.getElementById('landing-gear-tip');
+
+                const baseSpeed = 0.2;
+                let score = 0;
+                let fuel = Infinity;
+                let weatherConditions = ['Clear', 'Cloudy', 'Rainy', 'Stormy'];
+                let currentWeather = weatherConditions[0];
+                let weatherEffect = 1;
+                let heading = 0;
+                let throttle = 0;
+                let pitch = 0; // 俯仰角
+                let roll = 0; // 横滚角
+                let landingGearDown = true;
+                let isCockpitView = false;
+                let isCrashed = false;
+                let targetThrottle = throttle; // 目标油门值
+                let targetPitch = pitch;
+                let targetRoll = roll;
+                let targetHeading = heading;
+                let isTakingOff = false;
+
+                // 姿态变化平滑系数
+                const pitchSmoothing = 0.1;
+                const rollSmoothing = 0.1;
+                const headingSmoothing = 0.1;
+
+                // 姿态限制
+                const maxPitch = 30;
+                const minPitch = -30;
+                const maxRoll = 30;
+                const minRoll = -30;
+
+                // 起飞速度阈值
+                const takeoffSpeedThreshold = 1;
+                // 起飞高度阈值
+                const takeoffAltitudeThreshold = 0.5;
+
+                // Three.js 场景设置
+                const scene = new THREE.Scene();
+                const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+                const renderer = new THREE.WebGLRenderer();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                gameContainer.appendChild(renderer.domElement);
+
+                // 白天模式光照设置
+                const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+                scene.add(ambientLight);
+                const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+                directionalLight.position.set(1, 1, 1);
+                scene.add(directionalLight);
+
+                // Cannon.js 物理世界设置
+                const world = new CANNON.World();
+                world.gravity.set(0, -9.82, 0);
+
+                // 绘制机场建筑物
+                const buildingGeometry = new THREE.BoxGeometry(2, 3, 2);
+                const buildingMaterial = new THREE.MeshStandardMaterial({ color: 0x808080 });
+                for (let i = -5; i <= 5; i += 2) {
+                    const building = new THREE.Mesh(buildingGeometry, buildingMaterial);
+                    building.position.set(i, 1.5, -20);
+                    scene.add(building);
+                }
+
+                // 绘制草坪
+                const grassGeometry = new THREE.PlaneGeometry(50, 50);
+                const grassMaterial = new THREE.MeshStandardMaterial({ color: 0x228b22 });
+                const grass = new THREE.Mesh(grassGeometry, grassMaterial);
+                grass.rotation.x = -Math.PI / 2;
+                grass.position.y = 0;
+                scene.add(grass);
+
+                // 优化飞机绘制
+                const planeGroup = new THREE.Group();
+
+                const planeBodyGeometry = new THREE.CylinderGeometry(0.2, 0.5, 2, 32);
+                const planeBodyMaterial = new THREE.MeshStandardMaterial({ color: 0xffa500 });
+                const planeBody = new THREE.Mesh(planeBodyGeometry, planeBodyMaterial);
+                planeGroup.add(planeBody);
+
+                const wingGeometry = new THREE.BoxGeometry(0.1, 1, 3);
+                const wingMaterial = new THREE.MeshStandardMaterial({ color: 0xffa500 });
+                const leftWing = new THREE.Mesh(wingGeometry, wingMaterial);
+                leftWing.position.set(-0.5, 0, 0);
+                planeGroup.add(leftWing);
+                const rightWing = new THREE.Mesh(wingGeometry, wingMaterial);
+                rightWing.position.set(0.5, 0, 0);
+                planeGroup.add(rightWing);
+
+                const tailGeometry = new THREE.BoxGeometry(0.1, 0.5, 1);
+                const tailMaterial = new THREE.MeshStandardMaterial({ color: 0xffa500 });
+                const tail = new THREE.Mesh(tailGeometry, tailMaterial);
+                tail.position.set(0, 0, -1);
+                planeGroup.add(tail);
+
+                planeGroup.rotation.x = -Math.PI / 2;
+                planeGroup.position.set(0, 0.5, 0);
+                scene.add(planeGroup);
+
+                const planeShape = new CANNON.Cylinder(0.5, 0.5, 2, 32);
+                const planeBodyPhysics = new CANNON.Body({
+                    mass: 1,
+                    position: new CANNON.Vec3(0, 0.5, 0),
+                    shape: planeShape
+                });
+                world.addBody(planeBodyPhysics);
+
+                // 跑道
+                const runwayGeometry = new THREE.BoxGeometry(10, 0.1, 100);
+                const runwayMaterial = new THREE.MeshStandardMaterial({ color: 0x808080 });
+                const runway = new THREE.Mesh(runwayGeometry, runwayMaterial);
+                runway.position.set(0, 0, 0);
+                scene.add(runway);
+
+                const runwayShape = new CANNON.Box(new CANNON.Vec3(5, 0.05, 50));
+                const runwayBody = new CANNON.Body({
+                    mass: 0,
+                    position: new CANNON.Vec3(0, 0, 0),
+                    shape: runwayShape
+                });
+                world.addBody(runwayBody);
+
+                // 地面
+                const groundGeometry = new THREE.PlaneGeometry(100, 100);
+                const groundMaterial = new THREE.MeshStandardMaterial({ color: 0x808080 });
+                const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+                ground.rotation.x = -Math.PI / 2;
+                ground.position.y = -0.1;
+                scene.add(ground);
+
+                const groundShape = new CANNON.Plane();
+                const groundBody = new CANNON.Body({
+                    mass: 0,
+                    position: new CANNON.Vec3(0, -0.1, 0),
+                    shape: groundShape
+                });
+                groundBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), -Math.PI / 2);
+                world.addBody(groundBody);
+
+                // 3D 地图
+                const mapWidth = 20;
+                const mapHeight = 20;
+                for (let x = -mapWidth / 2; x < mapWidth / 2; x++) {
+                    for (let z = -mapHeight / 2; z < mapHeight / 2; z++) {
+                        const terrainType = Math.random();
+                        let terrainColor;
+                        if (terrainType < 0.2) {
+                            terrainColor = 0x228b22; // 森林
+                        } else if (terrainType < 0.4) {
+                            terrainColor = 0xffff00; // 草原
+                        } else if (terrainType < 0.6) {
+                            terrainColor = 0x87ceeb; // 海洋
+                        } else {
+                            terrainColor = 0xd2b48c; // 沙漠
+                        }
+                        const terrainGeometry = new THREE.BoxGeometry(1, 0.1, 1);
+                        const terrainMaterial = new THREE.MeshStandardMaterial({ color: terrainColor });
+                        const terrain = new THREE.Mesh(terrainGeometry, terrainMaterial);
+                        terrain.position.set(x, 0, z);
+                        scene.add(terrain);
+                    }
+                }
+
+                // 尾迹效果
+                const trailGeometry = new THREE.BufferGeometry();
+                const trailPositions = new Float32Array(100 * 3);
+                trailGeometry.setAttribute('position', new THREE.BufferAttribute(trailPositions, 3));
+                const trailMaterial = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.5 });
+                const trail = new THREE.Line(trailGeometry, trailMaterial);
+                scene.add(trail);
+                let trailIndex = 0;
+
+                // 云层
+                const cloudGeometry = new THREE.SphereGeometry(1, 32, 32);
+                const cloudMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.5 });
+                const numClouds = 20;
+                for (let i = 0; i < numClouds; i++) {
+                    const cloud = new THREE.Mesh(cloudGeometry, cloudMaterial);
+                    cloud.position.set(
+                        (Math.random() - 0.5) * 50,
+                        Math.random() * 10 + 5,
+                        (Math.random() - 0.5) * 50
+                    );
+                    scene.add(cloud);
+                }
+
+                // 背景
+                const backgroundGeometry = new THREE.PlaneGeometry(1000, 1000);
+                const backgroundMaterial = new THREE.MeshStandardMaterial({ color: 0x87ceeb });
+                const background = new THREE.Mesh(backgroundGeometry, backgroundMaterial);
+                background.rotation.x = -Math.PI / 2;
+                background.position.y = -10;
+                scene.add(background);
+
+                // 绘制城市
+                const citySize = 30;
+                const buildingHeightRange = [5, 20];
+                const buildingWidthRange = [1, 3];
+                const roadWidth = 2;
+                const roadSpacing = 5;
+
+                for (let x = -citySize; x < citySize; x += roadSpacing) {
+                    for (let z = -citySize; z < citySize; z += roadSpacing) {
+                        if (Math.random() < 0.8) {
+                            const buildingWidth = Math.random() * (buildingWidthRange[1] - buildingWidthRange[0]) + buildingWidthRange[0];
+                            const buildingHeight = Math.random() * (buildingHeightRange[1] - buildingHeightRange[0]) + buildingHeightRange[0];
+                            const buildingGeo = new THREE.BoxGeometry(buildingWidth, buildingHeight, buildingWidth);
+                            const buildingMat = new THREE.MeshStandardMaterial({ color: 0x666666 + Math.random() * 0x333333 });
+                            const building = new THREE.Mesh(buildingGeo, buildingMat);
+                            building.position.set(x + buildingWidth / 2, buildingHeight / 2, z + buildingWidth / 2);
+                            scene.add(building);
+                        }
+                    }
+                }
+
+                // 绘制道路
+                for (let x = -citySize; x < citySize; x += roadSpacing) {
+                    const roadGeo = new THREE.BoxGeometry(roadWidth, 0.1, citySize * 2);
+                    const roadMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
+                    const roadX = new THREE.Mesh(roadGeo, roadMat);
+                    roadX.position.set(x, 0.05, 0);
+                    scene.add(roadX);
+                }
+
+                for (let z = -citySize; z < citySize; z += roadSpacing) {
+                    const roadGeo = new THREE.BoxGeometry(citySize * 2, 0.1, roadWidth);
+                    const roadMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
+                    const roadZ = new THREE.Mesh(roadGeo, roadMat);
+                    roadZ.position.set(0, 0.05, z);
+                    scene.add(roadZ);
+                }
+
+                // 绘制路灯
+                const lampPostGeometry = new THREE.CylinderGeometry(0.1, 0.1, 3, 32);
+                const lampPostMaterial = new THREE.MeshStandardMaterial({ color: 0x888888 });
+                const lampGeometry = new THREE.SphereGeometry(0.3, 32, 32);
+                const lampMaterial = new THREE.MeshStandardMaterial({ color: 0xffff00 });
+
+                for (let x = -citySize; x < citySize; x += roadSpacing) {
+                    for (let z = -citySize; z < citySize; z += roadSpacing) {
+                        if (x % roadSpacing === 0 && z % roadSpacing === 0) {
+                            const lampPost = new THREE.Mesh(lampPostGeometry, lampPostMaterial);
+                            lampPost.position.set(x, 1.5, z);
+                            scene.add(lampPost);
+
+                            const lamp = new THREE.Mesh(lampGeometry, lampMaterial);
+                            lamp.position.set(x, 3, z);
+                            scene.add(lamp);
+                        }
+                    }
+                }
+
+                // 控制函数
+                function updateFuel() {
+                    fuelInstrument.textContent = '∞';
+                }
+
+                function changeWeather() {
+                    currentWeather = weatherConditions[Math.floor(Math.random() * weatherConditions.length)];
+                    switch (currentWeather) {
+                        case 'Clear':
+                            weatherEffect = 1;
+                            break;
+                        case 'Cloudy':
+                            weatherEffect = 1.05;
+                            break;
+                        case 'Rainy':
+                            weatherEffect = 1.1;
+                            break;
+                        case 'Stormy':
+                            weatherEffect = 1.2;
+                            break;
+                    }
+                }
+
+                // 相机初始位置
+                const followOffset = new THREE.Vector3(0, 5, 10);
+                const cockpitOffset = new THREE.Vector3(0, 0.5, 0);
+                const fixedOffset = new THREE.Vector3(0, 20, 0);
+
+                let targetCameraPosition = new THREE.Vector3();
+                let targetCameraLookAt = new THREE.Vector3();
+                let isTransitioning = false;
+                let transitionDuration = 500; // 过渡时间（毫秒）
+                let transitionStartTime = 0;
+
+                // 驾驶舱视角渲染器
+                const cockpitRenderer = new THREE.WebGLRenderer({ alpha: true });
+                cockpitRenderer.setSize(cockpitWindow.offsetWidth, cockpitWindow.offsetHeight);
+                cockpitWindow.appendChild(cockpitRenderer.domElement);
+                const cockpitCamera = new THREE.PerspectiveCamera(75, cockpitWindow.offsetWidth / cockpitWindow.offsetHeight, 0.1, 1000);
+
+                function movePlane() {
+                    if (isCrashed) return;
+
+                    // 平滑调整油门
+                    throttle = THREE.MathUtils.lerp(throttle, targetThrottle, 0.1);
+                    throttleInstrument.textContent = `${Math.round(throttle)}%`;
+
+                    // 平滑调整姿态
+                    pitch = THREE.MathUtils.lerp(pitch, targetPitch, pitchSmoothing);
+                    roll = THREE.MathUtils.lerp(roll, targetRoll, rollSmoothing);
+                    heading = THREE.MathUtils.lerp(heading, targetHeading, headingSmoothing);
+
+                    const currentSpeed = baseSpeed * (throttle / 100) / weatherEffect;
+                    const radians = (heading * Math.PI) / 180;
+                    const pitchRadians = (pitch * Math.PI) / 180;
+                    const rollRadians = (roll * Math.PI) / 180;
+
+                    // 平滑过渡姿态
+                    const targetRotation = new THREE.Euler(pitchRadians, radians, rollRadians);
+                    planeGroup.rotation.x = THREE.MathUtils.lerp(planeGroup.rotation.x, targetRotation.x, 0.1);
+                    planeGroup.rotation.y = THREE.MathUtils.lerp(planeGroup.rotation.y, targetRotation.y, 0.1);
+                    planeGroup.rotation.z = THREE.MathUtils.lerp(planeGroup.rotation.z, targetRotation.z, 0.1);
+
+                    const direction = new THREE.Vector3(
+                        Math.sin(radians),
+                        Math.sin(pitchRadians),
+                        Math.cos(radians)
+                    );
+                    direction.normalize();
+                    const movement = direction.multiplyScalar(currentSpeed);
+
+                    // 将 THREE.Vector3 转换为 CANNON.Vec3
+                    const cannonMovement = new CANNON.Vec3(movement.x, movement.y, movement.z);
+                    planeBodyPhysics.position.vadd(cannonMovement, planeBodyPhysics.position);
+
+                    planeGroup.position.copy(planeBodyPhysics.position);
+
+                    // 更新尾迹
+                    const positions = trail.geometry.attributes.position.array;
+                    positions[trailIndex * 3] = planeGroup.position.x;
+                    positions[trailIndex * 3 + 1] = planeGroup.position.y;
+                    positions[trailIndex * 3 + 2] = planeGroup.position.z;
+                    trailIndex = (trailIndex + 1) % 100;
+                    trail.geometry.attributes.position.needsUpdate = true;
+
+                    if (planeGroup.position.y < 0.5) {
+                        const crashSpeed = planeBodyPhysics.velocity.length();
+                        if (crashSpeed > 2) {
+                            handleCrash();
+                        }
+                    }
+
+                    // 更新高度表和速度表
+                    altitudeInstrument.textContent = `${Math.round(planeGroup.position.y * 100)}m`;
+                    const actualSpeed = planeBodyPhysics.velocity.length();
+                    speedInstrument.textContent = `${Math.round(actualSpeed * 360)}km/h`;
+
+                    // 更新俯仰角和横滚角显示
+                    pitchInstrument.textContent = `${Math.round(pitch)}°`;
+                    rollInstrument.textContent = `${Math.round(roll)}°`;
+
+                    // 起飞判定
+                    const currentAltitude = planeGroup.position.y;
+                    if (!isTakingOff && actualSpeed >= takeoffSpeedThreshold && currentAltitude >= takeoffAltitudeThreshold) {
+                        isTakingOff = true;
+                        takeoffMessage.style.display = 'block';
+                        takeoffTip.style.display = 'none';
+                        setTimeout(() => {
+                            takeoffMessage.style.display = 'none';
+                        }, 3000);
+                    }
+
+                    // 视角过渡
+                    if (isTransitioning) {
+                        const elapsedTime = Date.now() - transitionStartTime;
+                        const t = Math.min(elapsedTime / transitionDuration, 1);
+
+                        camera.position.lerp(targetCameraPosition, t);
+                        const lookAtTarget = new THREE.Vector3().addVectors(planeGroup.position, targetCameraLookAt);
+                        camera.lookAt(lookAtTarget);
+
+                        if (t === 1) {
+                            isTransitioning = false;
+                        }
+                    } else {
+                        if (isCockpitView) {
+                            camera.position.copy(planeGroup.position).add(cockpitOffset);
+                            const direction = new THREE.Vector3(0, 0, -1);
+                            direction.applyAxisAngle(new THREE.Vector3(0, 1, 0), -radians);
+                            direction.applyAxisAngle(new THREE.Vector3(1, 0, 0), -pitchRadians);
+                            camera.lookAt(planeGroup.position.clone().add(direction));
+
+                            // 在驾驶舱窗户中显示地图
+                            cockpitCamera.position.copy(planeGroup.position);
+                            cockpitCamera.position.y += 1;
+                            cockpitCamera.lookAt(planeGroup.position);
+                            cockpitRenderer.render(scene, cockpitCamera);
+                        } else {
+                            camera.position.copy(planeGroup.position).add(followOffset);
+                            camera.lookAt(planeGroup.position);
+                        }
+                    }
+
+                    updateFuel();
+
+                    // 更多调试信息
+                    console.log('Throttle:', throttle, 'Target Throttle:', targetThrottle);
+                    console.log('Pitch:', pitch, 'Target Pitch:', targetPitch);
+                    console.log('Roll:', roll, 'Target Roll:', targetRoll);
+                    console.log('Heading:', heading, 'Target Heading:', targetHeading);
+                    console.log('Plane Position:', planeGroup.position);
+                    console.log('Plane Velocity:', planeBodyPhysics.velocity);
+                }
+
+                function handleCrash() {
+                    isCrashed = true;
+                    scene.remove(planeGroup);
+                    scene.remove(trail);
+                    crashMessage.style.display = 'block';
+                    setTimeout(() => {
+                        location.reload();
+                    }, 3000);
+                }
+
+                function toggleLandingGear() {
+                    landingGearDown = !landingGearDown;
+                    const tipMessage = landingGearDown ? '起落架已放下' : '起落架已收起';
+                    landingGearTip.textContent = tipMessage;
+                    landingGearTip.style.display = 'block';
+                    setTimeout(() => {
+                        landingGearTip.style.display = 'none';
+                    }, 2000);
+                }
+
+                function toggleView() {
+                    isCockpitView = !isCockpitView;
+                    isTransitioning = true;
+                    transitionStartTime = Date.now();
+
+                    if (isCockpitView) {
+                        targetCameraPosition.copy(planeGroup.position).add(cockpitOffset);
+                        const radians = (heading * Math.PI) / 180;
+                        const pitchRadians = (pitch * Math.PI) / 180;
+                        const direction = new THREE.Vector3(0, 0, -1);
+                        direction.applyAxisAngle(new THREE.Vector3(0, 1, 0), -radians);
+                        direction.applyAxisAngle(new THREE.Vector3(1, 0, 0), -pitchRadians);
+                        targetCameraLookAt.copy(direction);
+                        cockpitView.style.display = 'block';
+                    } else {
+                        targetCameraPosition.copy(planeGroup.position).add(followOffset);
+                        targetCameraLookAt.copy(planeGroup.position).sub(camera.position).normalize();
+                        cockpitView.style.display = 'none';
+                    }
+                }
+
+                // 键盘事件监听
+                document.addEventListener('keydown', function (event) {
+                    if (isCrashed) return;
+                    switch (event.key) {
+                        case 'ArrowUp':
+                            targetPitch = Math.min(targetPitch + 2, maxPitch);
+                            break;
+                        case 'ArrowDown':
+                            targetPitch = Math.max(targetPitch - 2, minPitch);
+                            break;
+                        case 'ArrowLeft':
+                            targetRoll = Math.max(targetRoll - 2, minRoll);
+                            targetHeading = (targetHeading - 2 + 360) % 360;
+                            headingInstrument.textContent = `${targetHeading}°`;
+                            break;
+                        case 'ArrowRight':
+                            targetRoll = Math.min(targetRoll + 2, maxRoll);
+                            targetHeading = (targetHeading + 2) % 360;
+                            headingInstrument.textContent = `${targetHeading}°`;
+                            break;
+                        case 'G':
+                            toggleLandingGear();
+                            break;
+                        case 'V':
+                            toggleView();
+                            break;
+                    }
+                });
+
+                // 鼠标控制油门
+                document.addEventListener('mousemove', function (event) {
+                    if (isCrashed) return;
+                    targetThrottle = (event.clientY / window.innerHeight) * 100;
+                });
+
+                // 游戏循环
+                function animate() {
+                    requestAnimationFrame(animate);
+                    world.step(1 / 60);
+                    movePlane();
+                    renderer.render(scene, camera);
+                }
+
+                setInterval(changeWeather, 15000);
+                animate();
+
+                // 显示起飞提示
+                takeoffTip.style.display = 'block';
+            } catch (error) {
+                showErrorMessage(`游戏初始化出错：${error.message}`);
+                console.error(error);
+            }
+        }
+    </script>
+</body>
+
+</html>    
